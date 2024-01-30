@@ -1,12 +1,13 @@
 import errno
 import json
 import os
+import tomllib
 from collections import OrderedDict
+from configparser import ConfigParser
 
 from inifile import IniFile
 
 from lektor.context import get_ctx
-from lektor.utils import decode_flat_data
 from lektor.utils import iter_dotted_path_prefixes
 from lektor.utils import merge
 from lektor.utils import resolve_dotted_value
@@ -17,14 +18,18 @@ def load_databag(filename):
         if filename.endswith(".json"):
             with open(filename, encoding="utf-8") as f:
                 return json.load(f, object_pairs_hook=OrderedDict)
+        elif filename.endswith(".toml"):
+            with open(filename, "rb") as f:
+                return tomllib.load(f)
         elif filename.endswith(".ini"):
-            return decode_flat_data(IniFile(filename).items(), dict_cls=OrderedDict)
-        else:
-            return None
+            parser = ConfigParser()
+            with open(filename, encoding="utf-8") as f:
+                parser.read_file(f)
+                return {section: OrderedDict(parser.items(section)) for
+                        section in parser.sections()}
     except OSError as e:
         if e.errno != errno.ENOENT:
             raise
-        return None
 
 
 class Databags:
@@ -35,7 +40,7 @@ class Databags:
         self._bags = {}
         try:
             for filename in os.listdir(self.root_path):
-                if filename.endswith((".ini", ".json")):
+                if filename.endswith((".ini", ".json", ".toml")):
                     self._known_bags.setdefault(filename.rsplit(".", -1)[0], []).append(
                         filename
                     )

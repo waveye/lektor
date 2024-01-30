@@ -25,6 +25,7 @@ from typing import Callable
 from typing import ClassVar
 from typing import Hashable
 from typing import Iterable
+from typing import MutableMapping
 from typing import overload
 from typing import TypeVar
 
@@ -272,7 +273,7 @@ def merge(a, b):
     if isinstance(a, list) and isinstance(b, list):
         for idx, (item_1, item_2) in enumerate(zip(a, b)):
             a[idx] = merge(item_1, item_2)
-    if isinstance(a, dict) and isinstance(b, dict):
+    if isinstance(a, MutableMapping) and isinstance(b, MutableMapping):
         for key, value in b.items():
             a[key] = merge(a.get(key), value)
         return a
